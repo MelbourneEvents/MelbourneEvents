@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { isValidEventType } from "./eventTypes";
+import { EVENT_STATUS } from "./eventStatus";
 import { fetchIcsEvents } from "./scrapers/ics";
 import { fetchJsonEvents } from "./scrapers/json";
 import { fetchHtmlEvents } from "./scrapers/html";
@@ -21,6 +22,7 @@ export interface ScrapeResult {
   organisationName: string;
   created: number;
   updated: number;
+  pendingReview: number;
   skipped: { externalId: string; reason: string }[];
 }
 
@@ -53,6 +55,7 @@ export async function scrapeSource(sourceId: string): Promise<ScrapeResult> {
     organisationName: source.organisation.name,
     created: 0,
     updated: 0,
+    pendingReview: 0,
     skipped: [],
   };
 
@@ -102,11 +105,16 @@ export async function scrapeSource(sourceId: string): Promise<ScrapeResult> {
     });
 
     if (existing) {
+      // Deliberately don't touch `status` here — an already-approved or
+      // -rejected html event stays that way across re-scrapes, so
+      // moderation isn't redone every time the source is polled again.
       await prisma.event.update({ where: { id: existing.id }, data });
       result.updated++;
     } else {
-      await prisma.event.create({ data });
+      const status = source.type === "html" ? EVENT_STATUS.pendingReview : EVENT_STATUS.published;
+      await prisma.event.create({ data: { ...data, status } });
       result.created++;
+      if (status === EVENT_STATUS.pendingReview) result.pendingReview++;
     }
   }
 

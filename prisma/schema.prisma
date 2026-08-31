@@ -77,6 +77,12 @@ model Event {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // "published" (visible on the site) | "pending_review" | "rejected".
+  // Manual/ics/json inserts are trusted and default straight to
+  // "published"; only html-sourced events (an LLM's best-effort read of a
+  // page) start out "pending_review" — see src/lib/scrapeSource.ts.
+  status String @default("published")
+
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id])
 
@@ -91,4 +97,5 @@ model Event {
   @@index([startDateTime])
   @@index([type])
   @@index([organisationId])
+  @@index([status])
 }

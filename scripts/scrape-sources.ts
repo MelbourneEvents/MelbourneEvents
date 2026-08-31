@@ -31,6 +31,7 @@ async function main() {
     }
     console.log(
       `✔ ${r.organisationName}: ${r.created} new, ${r.updated} updated` +
+        (r.pendingReview ? `, ${r.pendingReview} awaiting review` : "") +
         (r.skipped.length ? `, ${r.skipped.length} skipped` : ""),
     );
     for (const s of r.skipped) console.log(`    - skipped ${s.externalId}: ${s.reason}`);

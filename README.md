@@ -13,7 +13,11 @@ listing links straight out to the organiser's own registration or info page
 - **Automatic scraping** — register a "source" (an organisation's ICS
   calendar, events JSON API, or plain event page) and the site pulls new
   events from it on its own, on a schedule, and keeps existing ones
-  up to date.
+  up to date. Recurring (RRULE) ICS events get one listing per upcoming
+  occurrence.
+- **Review queue** — events scraped from a plain page via an LLM start
+  hidden until approved at `/admin/review`; everything else (structured
+  feeds, manual inserts) publishes immediately.
 
 This is a first pass meant to be fine-tuned. Ideas for what's next are at
 the bottom.
@@ -27,11 +31,16 @@ storage.
 
 ```bash
 npm install
-cp .env.example .env        # DATABASE_URL="file:./dev.db"; add ANTHROPIC_API_KEY if you'll use html sources
+cp .env.example .env        # DATABASE_URL="file:./dev.db"; see below for the optional vars
 npx prisma migrate dev      # creates prisma/dev.db and the Event/Organisation/Source tables
 npm run seed                # optional: adds a few sample events so the site isn't empty
 npm run dev                 # http://localhost:3000
 ```
+
+The optional env vars: `ANTHROPIC_API_KEY` (only needed for `html`
+sources), `SCRAPE_CRON_SECRET` (protects `/api/scrape` in production),
+and `ADMIN_USERNAME` / `ADMIN_PASSWORD` (enables `/admin/review`, the
+review queue for `html`-sourced events — see below).
 
 ## Adding events
 
@@ -106,12 +115,14 @@ in order of preference:
 | `html` | Just the event page's URL | Best-effort — an LLM reads the page | Costs an API call per scrape |
 
 Use `ics` or `json` whenever the organisation has one — they're free, fast,
-and exact. Reach for `html` only when neither exists; it needs
-`ANTHROPIC_API_KEY` set (get one at [console.anthropic.com](https://console.anthropic.com)),
-costs a Claude API call every time that source is scraped, and its dedup
-key is a guess (title + date) rather than a real ID, so it can very
-occasionally duplicate a listing if the page's wording drifts between
-scrapes. `ics`/`json` sources don't have that problem.
+and exact, and their events publish immediately. Reach for `html` only
+when neither exists; it needs `ANTHROPIC_API_KEY` set (get one at
+[console.anthropic.com](https://console.anthropic.com)), costs a Claude
+API call every time that source is scraped, its dedup key is a guess
+(title + date) rather than a real ID, so it can very occasionally
+duplicate a listing if the page's wording drifts between scrapes, and —
+because it's an LLM's best-effort read of a page rather than parsed data
+— its events don't go live automatically; see **Review queue** below.
 
 ### Registering a source
 
@@ -175,22 +186,47 @@ anyone. On Vercel, add a `vercel.json`:
 that can hit a URL works — a GitHub Actions workflow on a `schedule`
 trigger, or plain `cron` + `curl` on a server you control.
 
-### Known limitations
+### Recurring events
 
-- **Recurring events (RRULE in ICS feeds)** are read as their first
-  occurrence only — a weekly meetup won't get a row per future week.
-- **`html` sources** classify and format best-effort; spot-check a newly
-  registered one before trusting it unattended.
+A recurring `ics` event (an RRULE, e.g. a weekly meetup) is expanded into
+one row per upcoming occurrence — not just its first — within the next 6
+months, capped at 60 occurrences per rule so a mis-tagged daily/hourly
+feed can't flood the site. Re-scraping updates each occurrence in place
+rather than duplicating it.
+
+### Review queue
+
+`ics`/`json` events and anything you insert yourself (`add-event`,
+`import-org`) publish immediately — they're either parsed structured data
+or something a human wrote. `html`-sourced events are different: they're
+an LLM's read of a page, so a newly-created one starts out
+**pending review** and doesn't appear on the public site or its direct
+`/events/[id]` link until approved.
+
+Approve or reject them at **`/admin/review`**, gated by HTTP Basic Auth —
+set `ADMIN_USERNAME` and `ADMIN_PASSWORD` to enable it (without both set,
+every `/admin/*` route refuses all requests rather than being left open).
+This is a single shared password, not real multi-user auth — good enough
+for one operator, not for organisers self-managing their own events (see
+**Possible next steps**).
+
+Rejecting an event sticks: re-scraping the same source later won't
+resurface it as pending again, and approving/rejecting never touches an
+event that's already been through review, so you're not re-moderating
+the same listing on every scrape.
 
 ## Project layout
 
 ```
 prisma/schema.prisma          Organisation + Event + Source data model
 src/lib/events.ts             validation + insert logic (shared by scripts and, later, an admin UI)
-src/lib/queryEvents.ts        read-side queries used by the site (filters, search)
+src/lib/eventStatus.ts        published / pending_review / rejected constants
+src/lib/queryEvents.ts        read-side queries used by the public site — always scoped to published
 src/lib/scrapeSource.ts       runs one/all Sources: fetch, dedup, upsert, status tracking
 src/lib/scrapers/             one adapter per source type — ics.ts, json.ts, html.ts
+src/middleware.ts             HTTP Basic Auth gate for /admin/*
 src/app/                      the public site (Next.js App Router)
+src/app/admin/review/         review queue UI (approve/reject pending html-sourced events)
 src/app/api/scrape/route.ts   HTTP endpoint a scheduler calls to run all sources
 scripts/add-event.ts          CLI: insert one event
 scripts/import-org-events.ts  CLI: bulk-insert one organisation's events
@@ -205,13 +241,13 @@ data/examples/                example JSON matching the schemas above
 Nothing below is built yet — flagging these as directions to fine-tune
 toward, not a roadmap:
 
-- An admin UI (web form) for inserting events and managing sources instead
-  of hand-editing JSON.
-- Expanding recurring (RRULE) events from ICS feeds into one row per
-  occurrence, instead of just the first.
-- A review/moderation step for newly-scraped `html`-sourced events before
-  they go live, rather than trusting the LLM's read unattended.
-- Auth so multiple organisers can manage their own events and sources.
+- A web form for inserting events and managing sources instead of
+  hand-editing JSON (the review queue at `/admin/review` is the first
+  piece of an admin UI, but registering sources and inserting one-off
+  events are still CLI-only).
+- Real multi-user auth (accounts, per-organiser permissions) so
+  organisers can manage their own events and sources — `/admin/review`'s
+  single shared password is a stopgap for one operator.
 - Event images and a "save/follow" feature for visitors.
 - Deploying somewhere with persistent storage (SQLite's local file won't
   survive a typical serverless deploy — Postgres would be the swap; it's

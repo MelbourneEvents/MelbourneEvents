@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import { EVENT_STATUS } from "./eventStatus";
 
 export interface EventFilters {
   type?: string;
@@ -8,8 +9,12 @@ export interface EventFilters {
   when?: "upcoming" | "past" | "all";
 }
 
+// Every public query is scoped to published events — pending_review
+// (awaiting moderation) and rejected events never appear on the site,
+// including via a direct /events/[id] link. src/app/admin/review queries
+// pending events itself, unfiltered.
 export async function listEvents(filters: EventFilters) {
-  const where: Prisma.EventWhereInput = {};
+  const where: Prisma.EventWhereInput = { status: EVENT_STATUS.published };
 
   if (filters.type) where.type = filters.type;
   if (filters.organisationId) where.organisationId = filters.organisationId;
@@ -44,8 +49,8 @@ export async function listOrganisations() {
 }
 
 export async function getEventById(id: string) {
-  return prisma.event.findUnique({
-    where: { id },
+  return prisma.event.findFirst({
+    where: { id, status: EVENT_STATUS.published },
     include: { organisation: true },
   });
 }

@@ -1,0 +1,17 @@
+{
+  "organisation": {
+    "name": "Melbourne Tech Founders",
+    "website": "https://example.com/melbourne-tech-founders"
+  },
+  "event": {
+    "title": "Founders Networking Night",
+    "description": "An informal evening for early-stage founders to meet, swap notes, and find collaborators over drinks.",
+    "type": "networking",
+    "startDateTime": "2026-09-18T18:30:00+10:00",
+    "endDateTime": "2026-09-18T21:00:00+10:00",
+    "location": "The Boatbuilders Yard, South Wharf",
+    "isOnline": false,
+    "registrationUrl": "https://example.com/events/founders-networking-night",
+    "tags": ["startups", "founders", "networking"]
+  }
+}

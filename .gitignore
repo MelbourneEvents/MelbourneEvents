@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# SQLite dev database — schema lives in prisma/schema.prisma, data does not belong in git
+prisma/dev.db
+prisma/dev.db-journal
+
+.env
+.env*.local
+
+.DS_Store

@@ -1,0 +1,40 @@
+{
+  "organisation": {
+    "name": "Melbourne Data Science Meetup",
+    "website": "https://example.com/melbourne-data-science"
+  },
+  "events": [
+    {
+      "title": "Intro to Vector Databases",
+      "description": "A hands-on workshop covering embeddings, indexing strategies, and when you actually need a vector database.",
+      "type": "workshop",
+      "startDateTime": "2026-09-05T17:30:00+10:00",
+      "endDateTime": "2026-09-05T19:30:00+10:00",
+      "location": "RMIT Building 80, Melbourne CBD",
+      "isOnline": false,
+      "registrationUrl": "https://example.com/events/vector-db-workshop",
+      "tags": ["data science", "workshop", "databases"]
+    },
+    {
+      "title": "Talk: Evaluating LLMs in Production",
+      "description": "A practitioner's guide to building evaluation harnesses for LLM-powered features, with real war stories.",
+      "type": "talk",
+      "startDateTime": "2026-09-12T18:00:00+10:00",
+      "endDateTime": "2026-09-12T19:00:00+10:00",
+      "location": "Online",
+      "isOnline": true,
+      "registrationUrl": "https://example.com/events/evaluating-llms-talk",
+      "tags": ["llm", "ai", "talk"]
+    },
+    {
+      "title": "October Meetup: Lightning Talks",
+      "description": "Five short talks from community members, followed by networking drinks.",
+      "type": "meetup",
+      "startDateTime": "2026-10-03T18:00:00+10:00",
+      "location": "Fishburners, Melbourne",
+      "isOnline": false,
+      "registrationUrl": "https://example.com/events/october-lightning-talks",
+      "tags": ["meetup", "community"]
+    }
+  ]
+}

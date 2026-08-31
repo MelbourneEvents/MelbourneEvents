@@ -1,0 +1,48 @@
+// Melbourne Events data model.
+//
+// An Organisation runs Events. Each Event links out to its own
+// registration/info page rather than trying to host registration itself.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organisation {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  website   String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+
+  events Event[]
+}
+
+// Kept as a plain string (not a Prisma enum) so new categories can be
+// added later without a migration. Validated against ALLOWED_EVENT_TYPES
+// in src/lib/eventTypes.ts at insert time.
+model Event {
+  id               String   @id @default(cuid())
+  title            String
+  description      String
+  type             String
+  startDateTime    DateTime
+  endDateTime      DateTime?
+  location         String
+  isOnline         Boolean  @default(false)
+  registrationUrl  String
+  tags             String   @default("")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+
+  @@index([startDateTime])
+  @@index([type])
+  @@index([organisationId])
+}

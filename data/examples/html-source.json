@@ -1,0 +1,12 @@
+{
+  "organisation": {
+    "name": "Melbourne Product People",
+    "website": "https://example.com/melbourne-product-people"
+  },
+  "source": {
+    "url": "https://example.com/melbourne-product-people/events",
+    "type": "html",
+    "defaultType": "talk",
+    "defaultTags": ["product"]
+  }
+}

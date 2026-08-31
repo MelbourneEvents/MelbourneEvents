@@ -1,0 +1,24 @@
+{
+  "organisation": {
+    "name": "Melbourne Startup Events",
+    "website": "https://example.com/melbourne-startup-events"
+  },
+  "source": {
+    "url": "https://example.com/api/organisations/melbourne-startup-events/events",
+    "type": "json",
+    "defaultType": "networking",
+    "defaultTags": ["startups"],
+    "config": {
+      "eventsPath": "events",
+      "fields": {
+        "externalId": "id",
+        "title": "name.text",
+        "description": "description.text",
+        "startDateTime": "start.utc",
+        "endDateTime": "end.utc",
+        "location": "venue.address.localized_address_display",
+        "registrationUrl": "url"
+      }
+    }
+  }
+}

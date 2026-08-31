@@ -12,13 +12,18 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx scripts/seed.ts",
     "add-event": "tsx scripts/add-event.ts",
-    "import-org": "tsx scripts/import-org-events.ts"
+    "import-org": "tsx scripts/import-org-events.ts",
+    "add-source": "tsx scripts/add-source.ts",
+    "scrape": "tsx scripts/scrape-sources.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
     "@prisma/client": "^5.20.0",
     "next": "15.5.24",
+    "node-ical": "^0.27.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^20.14.15",

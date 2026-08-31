@@ -1,0 +1,12 @@
+{
+  "organisation": {
+    "name": "Melbourne JS Meetup",
+    "website": "https://example.com/melbourne-js"
+  },
+  "source": {
+    "url": "https://www.meetup.com/melbourne-js/events/ical/",
+    "type": "ics",
+    "defaultType": "meetup",
+    "defaultTags": ["javascript", "meetup"]
+  }
+}

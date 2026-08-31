@@ -19,7 +19,45 @@ model Organisation {
   logoUrl   String?
   createdAt DateTime @default(now())
 
+  events  Event[]
+  sources Source[]
+}
+
+// A feed the site re-fetches on a schedule to pull in an organisation's
+// events automatically, instead of someone hand-writing JSON for them.
+model Source {
+  id             String   @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+
+  url  String
+  // "ics" (calendar feed, e.g. Meetup/Luma export) | "json" (an events API,
+  // mapped via `config`) | "html" (a generic event page, read by an LLM).
+  type String
+
+  // "json" sources: JSON-encoded field-mapping config (see src/lib/scrapers/json.ts).
+  // Unused by "ics"/"html" sources.
+  config String?
+
+  // Applied to every event pulled from this source, since feeds rarely
+  // carry our own category/tag vocabulary (html sources classify `type`
+  // themselves and defaultType is only their fallback).
+  defaultType String @default("other")
+  defaultTags String @default("")
+
+  active Boolean @default(true)
+
+  lastScrapedAt  DateTime?
+  lastStatus     String? // "ok" | "error"
+  lastError      String?
+  lastEventCount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   events Event[]
+
+  @@unique([organisationId, url])
 }
 
 // Kept as a plain string (not a Prisma enum) so new categories can be
@@ -42,6 +80,14 @@ model Event {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id])
 
+  // Set only for events pulled in by a Source. externalId identifies the
+  // event within that source (an ICS UID, a JSON id, or a slug+date for
+  // html) so re-scraping updates the same row instead of duplicating it.
+  sourceId   String?
+  source     Source? @relation(fields: [sourceId], references: [id])
+  externalId String?
+
+  @@unique([sourceId, externalId])
   @@index([startDateTime])
   @@index([type])
   @@index([organisationId])
